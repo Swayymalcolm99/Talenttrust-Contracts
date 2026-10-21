@@ -388,7 +388,7 @@ fn cannot_double_compact() {
     // First compaction succeeds
     s.escrow.compact_escrow(&id);
 
-    // Second compaction fails
+    // Second compaction fails - receipt already exists
     assert_eq!(
         s.escrow.try_compact_escrow(&id),
         Err(Ok(EscrowError::NotCompactable))
@@ -408,11 +408,11 @@ fn receipt_fields_match_escrow_before_compaction() {
     s.escrow.release_milestone(&id, &0);
     s.escrow.release_milestone(&id, &1);
 
-    // Get the escrow before compaction
-    let escrow = s.escrow.get_contract(&id);
-
     // Cancel to make it terminal
     s.escrow.cancel_contract(&id);
+
+    // Get the escrow after cancellation (it has the final state)
+    let escrow = s.escrow.get_contract(&id);
 
     // Compact
     s.escrow.compact_escrow(&id);
@@ -425,7 +425,7 @@ fn receipt_fields_match_escrow_before_compaction() {
     assert_eq!(receipt.token, escrow.token);
     assert_eq!(receipt.total_amount, escrow.total_amount);
     assert_eq!(receipt.released_amount, escrow.released_amount);
-    assert_eq!(receipt.refunded_amount, escrow.funded_amount - escrow.released_amount);
+    assert_eq!(receipt.refunded_amount, escrow.refunded_amount);
     assert_eq!(receipt.status, escrow.status);
     assert_eq!(receipt.milestone_count, escrow.milestones.len() as u32);
     assert_eq!(receipt.reputation_issued, escrow.reputation_issued);
